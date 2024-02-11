@@ -1,0 +1,226 @@
+# Import libararies
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from sklearn.tree import DecisionTreeRegressor
+from sklearn import metrics
+from sklearn.metrics import r2_score
+from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import BaggingRegressor
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score, KFold
+from sklearn.ensemble import AdaBoostRegressor
+
+# Importing the dataset
+WM = pd.read_csv('Book 3.csv')
+WM
+
+# Display data description
+print("Data Description:")
+print(WM.describe())
+
+%matplotlib inline
+sns.set(font_scale = 3)
+relation = sns.pairplot(SCCM, kind="reg", height=10)
+
+plt.figure(figsize=(15,15))
+a=sb.heatmap(WM.corr(), cmap="Greens", annot=True, fmt='.2f',   vmin=-1, vmax=+1, center=None, robust=False, 
+    linewidths=6,
+    linecolor='white',
+    cbar=True,
+    cbar_kws=None,
+    cbar_ax=None,
+    square=True,
+    xticklabels='auto',
+    yticklabels='auto',
+    mask=None,
+    ax=None,
+            annot_kws={"size": 25})
+plt.show()
+
+# Visualizing correlation matrix as heatmap
+plt.figure(figsize=(10, 8))
+sns.heatmap(WM.corr(), annot=True, cmap='coolwarm', linewidths=0.5)
+plt.title('Correlation Heatmap')
+plt.show()
+
+# Splitting into train set and test set
+X = WM.iloc[:, :-1].values
+y = WM.iloc[:, -1].values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=0)
+
+# Define the parameter grid for MLPRegressor hyperparameter tuning
+param_grid = {
+    'hidden_layer_sizes': [(20,), (50,), (100,), (20, 20), (50, 50), (100, 100)],
+    'activation': ['identity', 'logistic', 'tanh', 'relu'],
+    'solver': ['lbfgs', 'sgd', 'adam'],
+    'alpha': [0.0001, 0.001, 0.01],
+    'learning_rate': ['constant', 'invscaling', 'adaptive']
+}
+
+# Initialize the MLPRegressor
+regressor= MLPRegressor(hidden_layer_sizes=(20,20),activation="relu",solver='adam',alpha=0.0001,batch_size=32,learning_rate="constant",learning_rate_init=0.001,max_iter=10000)
+
+# GridSearchCV to find the best hyperparameters
+grid_search = GridSearchCV(regressor, param_grid, cv=5, scoring='r2')
+grid_search.fit(X_train, y_train)
+
+# Best hyperparameters
+best_params = grid_search.best_params_
+best_score = grid_search.best_score_
+
+# Train MLPRegressor with best hyperparameters
+best_regressor = MLPRegressor(**best_params)
+best_regressor.fit(X_train, y_train)
+y_pred_best = best_regressor.predict(X_test)
+
+# R^2 Score with best hyperparameters
+R_value_best = r2_score(y_test, y_pred_best)
+
+print("Best Hyperparameters for MLPRegressor:", best_params)
+print("Best R^2 Score (after hyperparameter tuning):", R_value_best)
+
+# Define the parameter grid for AdaBoostRegressor hyperparameter tuning
+adb_param_grid = {
+    'n_estimators': [10, 100, 150, 200],
+    'learning_rate': [0.01, 0.1, 0.5, 0.9],
+    'loss': ['linear', 'square', 'exponential']
+}
+
+# Initialize the AdaBoostRegressor with base estimator MLPRegressor
+adb_regressor = AdaBoostRegressor(base_estimator=best_regressor)
+
+# GridSearchCV to find the best hyperparameters for AdaBoostRegressor
+adb_grid_search = GridSearchCV(adb_regressor, adb_param_grid, cv=5, scoring='r2')
+adb_grid_search.fit(X_train, y_train)
+
+# Best hyperparameters for AdaBoostRegressor
+best_adb_params = adb_grid_search.best_params_
+best_adb_score = adb_grid_search.best_score_
+
+# Train AdaBoostRegressor with best hyperparameters
+best_adb_regressor = AdaBoostRegressor(base_estimator=best_regressor, **best_adb_params)
+best_adb_regressor.fit(X_train, y_train)
+y_pred_best_adb = best_adb_regressor.predict(X_test)
+
+# R^2 Score with best hyperparameters for AdaBoostRegressor
+R_value_best_adb = r2_score(y_test, y_pred_best_adb)
+
+print("Best Hyperparameters for AdaBoostRegressor:", best_adb_params)
+print("Best R^2 Score for AdaBoostRegressor (after hyperparameter tuning):", R_value_best_adb)
+
+# Perform k-fold cross-validation for MLPRegressor
+kfold = KFold(n_splits=10, shuffle=True, random_state=0)
+cv_scores_mlp = cross_val_score(best_regressor, X_train, y_train, cv=kfold, scoring='r2')
+
+# Perform k-fold cross-validation for AdaBoostRegressor
+cv_scores_adb = cross_val_score(best_adb_regressor, X_train, y_train, cv=kfold, scoring='r2')
+cv_scores_adb scores = cross_val_score(ADBB40, X_test, y_test, cv=10, scoring= 'neg_mean_absolute_error')
+cv_scores_adb scores1 = cross_val_score(ADBB40, X_test, y_test, cv=10, scoring= 'neg_mean_squared_log_error')
+cv_scores_adb scores2 = cross_val_score(ADBB40, X_test, y_test, cv=10, scoring= 'neg_root_mean_squared_error')
+
+print("Mean R^2 Score (MLPRegressor) with 10-fold Cross Validation:", np.mean(cv_scores_mlp))
+print("Mean R^2 Score (AdaBoostRegressor) with 10-fold Cross Validation:", np.mean(cv_scores_adb))
+
+# pip install shap
+Requirement already satisfied: shap in e:\anaconda\lib\site-packages (0.40.0)Note: you may need to restart the kernel to use updated packages.
+Requirement already satisfied: tqdm>4.25.0 in e:\anaconda\lib\site-packages (from shap) (4.62.3)
+Requirement already satisfied: pandas in e:\anaconda\lib\site-packages (from shap) (1.3.4)
+Requirement already satisfied: numba in e:\anaconda\lib\site-packages (from shap) (0.54.1)
+Requirement already satisfied: scipy in e:\anaconda\lib\site-packages (from shap) (1.7.1)
+Requirement already satisfied: packaging>20.9 in e:\anaconda\lib\site-packages (from shap) (21.0)
+Requirement already satisfied: scikit-learn in e:\anaconda\lib\site-packages (from shap) (0.24.2)
+Requirement already satisfied: cloudpickle in e:\anaconda\lib\site-packages (from shap) (2.0.0)
+Requirement already satisfied: slicer==0.0.7 in e:\anaconda\lib\site-packages (from shap) (0.0.7)
+Requirement already satisfied: numpy in e:\anaconda\lib\site-packages (from shap) (1.20.3)
+Requirement already satisfied: pyparsing>=2.0.2 in e:\anaconda\lib\site-packages (from packaging>20.9->shap) (3.0.4)
+Requirement already satisfied: colorama in e:\anaconda\lib\site-packages (from tqdm>4.25.0->shap) (0.4.4)
+Requirement already satisfied: setuptools in e:\anaconda\lib\site-packages (from numba->shap) (58.0.4)
+Requirement already satisfied: llvmlite<0.38,>=0.37.0rc1 in e:\anaconda\lib\site-packages (from numba->shap) (0.37.0)
+Requirement already satisfied: python-dateutil>=2.7.3 in e:\anaconda\lib\site-packages (from pandas->shap) (2.8.2)
+Requirement already satisfied: pytz>=2017.3 in e:\anaconda\lib\site-packages (from pandas->shap) (2021.3)
+Requirement already satisfied: six>=1.5 in e:\anaconda\lib\site-packages (from python-dateutil>=2.7.3->pandas->shap) (1.16.0)
+Requirement already satisfied: threadpoolctl>=2.0.0 in e:\anaconda\lib\site-packages (from scikit-learn->shap) (2.2.0)
+Requirement already satisfied: joblib>=0.11 in e:\anaconda\lib\site-packages (from scikit-learn->shap) (1.1.0)
+
+for shapley
+
+# Train a MLP regressor (or any other regression model)
+
+model = MLPRegressor()
+model.fit(X_train, y_train)
+
+# SHAP (SHapley Additive exPlanations) analysis
+
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_test)
+
+# Summary plot
+shap.summary_plot(shap_values, X_test[Features1].to_numpy(), Features1, plot_type="dot", plot_size=(16, 15), show=False)
+plt.xlabel('Shapley Values - Impact on model', fontsize=60)
+plt.tick_params(labelsize=30)
+plt.savefig('Feature Importance - SHAP.JPG', format='JPG', dpi=300, bbox_inches='tight')
+plt.show()
+explainer = shap.Explainer(best_regressor, X_train)
+shap_values = explainer.shap_values(X_test)
+
+# Summary plot
+shap.summary_plot(shap_values, X_test, feature_names=WM.columns[:-1], show=False)
+plt.title('SHAP Summary Plot for MLPRegressor')
+plt.show()
+
+import tkinter as tk
+from tkinter import messagebox
+import pandas as pd
+from sklearn.neural_network import MLPRegressor
+import shap
+
+# Load the trained model
+model = MLPRegressor()  # Update this with your trained model
+
+# Load SHAP explainer
+explainer = shap.Explainer(model, X_train)  # Update X_train with your training data
+
+# Define the function to make predictions and show SHAP summary plot
+def predict_properties():
+    # Get input values from the entry widgets
+    input_values = [float(entry.get()) for entry in entry_widgets]
+    
+    # Make prediction using the model
+    prediction = model.predict([input_values])[0]
+    
+    # Show prediction in a message box
+    messagebox.showinfo("Prediction", f"Predicted compressive strength: {prediction}")
+    
+    # Calculate SHAP values
+    shap_values = explainer.shap_values([input_values])[0]
+    
+    # Display SHAP summary plot
+    shap.summary_plot(shap_values, feature_names=Feature_Names, show=False)
+    plt.title('SHAP Summary Plot')
+    plt.show()
+
+# Create the main window
+root = tk.Tk()
+root.title("Property Predictor")
+
+# Create input labels and entry widgets
+input_labels = ["FA", "GGBS", "Fine", "Coarse", "NaOH", "Na2SiO3", "SP", "Temp"]
+entry_widgets = []
+for i, label_text in enumerate(input_labels):
+    label = tk.Label(root, text=label_text)
+    label.grid(row=i, column=0, padx=5, pady=5)
+    
+    entry = tk.Entry(root)
+    entry.grid(row=i, column=1, padx=5, pady=5)
+    entry_widgets.append(entry)
+
+# Create predict button
+predict_button = tk.Button(root, text="Predict", command=predict_properties)
+predict_button.grid(row=len(input_labels), column=0, columnspan=2, padx=5, pady=10)
+
+# Run the GUI
+root.mainloop()
+
+Do for BaggingRegressor as well ( same procedure )
