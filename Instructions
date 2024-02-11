@@ -1,0 +1,13 @@
+To run this code in a Jupyter Notebook, you need to follow these steps:
+
+Open Jupyter Notebook on your machine.
+Create a new Python notebook or open an existing one.
+Copy the code provided above into a code cell in the Jupyter Notebook.
+Replace "https://github.com/your_username/your_repository" with the actual link to your GitHub repository where the code is hosted.
+Run each code cell sequentially by clicking on the "Run" button or by using keyboard shortcuts like Shift + Enter.
+Ensure that you have all the necessary libraries installed in your Python environment to execute the code successfully. You can install missing libraries using pip if needed (!pip install <library_name>). Additionally, make sure to have the HPCFA471.csv file in the same directory as your Jupyter Notebook or provide the correct path to the file when reading the dataset.
+
+For additional help please refer 
+https://github.com/DC-777/Explainable-machine-learning-compressive-behavior-high-performance-concrete
+
+If you encounter any errors or need further assistance, feel free to ask!
